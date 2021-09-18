@@ -17,7 +17,7 @@ const errorMessage = (message, error) => {
     const exampleEmbed = new MessageEmbed()
         .setColor('#ef3939')
         .setTitle('Something Broke 😲')
-        .setAuthor(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setDescription(`${error}`)
         .setTimestamp()
     message.channel.send({ embeds: [exampleEmbed] });
@@ -27,7 +27,7 @@ const pingMessage = (message) => {
     const exampleEmbed = new MessageEmbed()
         .setColor('#e6b48f')
         .setTitle('Ping 🏓')
-        .setAuthor(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setTimestamp()
     message.channel.send({ embeds: [exampleEmbed] });
 }
@@ -36,7 +36,7 @@ const pongMessage = (message) => {
     const exampleEmbed = new MessageEmbed()
         .setColor('#e6b48f')
         .setTitle('Pong 🏓')
-        .setAuthor(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setTimestamp()
     message.channel.send({ embeds: [exampleEmbed] });
 }
@@ -45,7 +45,7 @@ const pongMessage = (message) => {
 const playerEmbed = (data) => {
     return new MessageEmbed()
         .setColor('#562765')
-        .setAuthor(`${data.player_first_name} ${data.player_last_name}`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setFooter(`${data.player_first_name} ${data.player_last_name}`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setTitle(`${data.name}`)
         .addFields(
             {
@@ -64,7 +64,50 @@ const playerEmbed = (data) => {
             { name: 'h2h', value: `${data.leagues.h2h.length}`, inline: true },
 
         );
+}
 
+const overviewEmbed = (data) => {
+
+    let fields = []
+    let i = 0;
+    while (data.events[i].finished && i <38) {
+
+        fields = fields.concat(
+            [{
+                name: `${data.events[i].name}`,
+                value: `Week`,
+                inline: true
+            },
+            {
+                name: `${data.events[i].average_entry_score}`,
+                value: `Average`,
+                inline: true,
+            },
+            {
+                name: `${data.events[i].average_entry_score}`,
+                value: `Highest Score`,
+                inline: true,
+            },
+            {
+                name: `${data.events[i].transfers_made}`,
+                value: `Transfers Made`,
+                inline: true,
+            }
+        ])
+        i++;
+    }
+
+    return new MessageEmbed()
+        .setColor('#562765')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setTitle(`Overview`)
+        .addFields(
+            {
+                name: `${data.total_players}`,
+                value: 'Total Players',
+            }
+            ,fields
+        );
 }
 
 client.on('messageCreate', async(message) => {
@@ -81,12 +124,14 @@ client.on('messageCreate', async(message) => {
             }
 
         } else if (message.content.includes('overview')) {
-            await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
-                .then(resp => {
-                    console.log(resp);
-                }).catch(function (error) {
-                    console.log(error);
-                })
+            try {
+                const result = await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
+                const embed = overviewEmbed(result.data)
+                message.channel.send({ embeds: [embed] });
+
+            } catch (error) {
+                errorMessage(message, error);
+            }
 
         } else if (message.content.includes('ping')){
             try {
@@ -94,6 +139,7 @@ client.on('messageCreate', async(message) => {
             } catch(error) {
                 errorMessage(message, error);
             }
+
         } else if (message.content.includes('pong')) {
             try {
                 const embed = pingMessage(message)
