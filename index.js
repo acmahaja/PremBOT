@@ -15,11 +15,32 @@ client.on('ready', () => {
 const errorMessage = (message, error) => {
     console.log(error);
     const exampleEmbed = new MessageEmbed()
-        .setColor('#ff0000')
+        .setColor('#ef3939')
         .setTitle('Something Broke 😲')
+        .setAuthor(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setDescription(`${error}`)
         .setTimestamp()
     message.channel.send({ embeds: [exampleEmbed] });
 }
+
+const pingMessage = (message) => {
+    const exampleEmbed = new MessageEmbed()
+        .setColor('#e6b48f')
+        .setTitle('Ping 🏓')
+        .setAuthor(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setTimestamp()
+    message.channel.send({ embeds: [exampleEmbed] });
+}
+
+const pongMessage = (message) => {
+    const exampleEmbed = new MessageEmbed()
+        .setColor('#e6b48f')
+        .setTitle('Pong 🏓')
+        .setAuthor(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setTimestamp()
+    message.channel.send({ embeds: [exampleEmbed] });
+}
+
 
 const playerEmbed = (data) => {
     return new MessageEmbed()
@@ -59,15 +80,6 @@ client.on('messageCreate', async(message) => {
                 errorMessage(message, error);
             }
 
-
-        } else if (message.content.includes('overview')) {
-            await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
-                .then(resp => {
-                    console.log(resp);
-                }).catch(function(error) {
-                    console.log(error);
-                })
-                
         } else if (message.content.includes('overview')) {
             await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
                 .then(resp => {
@@ -76,8 +88,19 @@ client.on('messageCreate', async(message) => {
                     console.log(error);
                 })
 
+        } else if (message.content.includes('ping')){
+            try {
+                const embed = pongMessage(message)
+            } catch(error) {
+                errorMessage(message, error);
+            }
+        } else if (message.content.includes('pong')) {
+            try {
+                const embed = pingMessage(message)
+            } catch (error) {
+                errorMessage(message, error);
+            }
         }
-        
         else {
             errorMessage(message, "Unknown command");
         }
