@@ -42,11 +42,12 @@ const pongMessage = (message) => {
 }
 
 
-const playerEmbed = (data) => {
+const playerEmbed = (data, author) => {
     return new MessageEmbed()
         .setColor('#562765')
         .setFooter(`${data.player_first_name} ${data.player_last_name}`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setTitle(`${data.name}`)
+        .setThumbnail(author.avatarURL())
         .addFields(
             {
                 name: `${data.summary_overall_points}`,
@@ -109,7 +110,7 @@ client.on('messageCreate', async(message) => {
             try {
                 message.content = message.content.substr('~player '.length);
                 const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${message.content}/`)
-                const embed = playerEmbed(result.data)
+                const embed = playerEmbed(result.data, message.author)
                 message.channel.send({ embeds: [embed] });
                 
             } catch (error) {
