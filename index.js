@@ -11,7 +11,6 @@ client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
 });
 
-
 const errorMessage = (message, error) => {
     console.log(error);
     const exampleEmbed = new MessageEmbed()
@@ -40,7 +39,6 @@ const pongMessage = (message) => {
         .setTimestamp()
     message.channel.send({ embeds: [exampleEmbed] });
 }
-
 
 const playerEmbed = (data, author) => {
     return new MessageEmbed()
@@ -104,6 +102,57 @@ const overviewEmbed = (data) => {
         );
 }
 
+const leagueTableEmbed = (data) =>{
+
+    let team = ""
+    let gamesPlayed = ""
+    let gd = ""
+    let points = ""
+    
+    let i = 1;
+    data.standings.forEach(rank => {
+        team += `${i}.\t${rank.team.displayName}\n`
+        points += `${rank.stats[6].value}\n`
+        gd += `${rank.stats[9].value}\n`
+        gamesPlayed += `${rank.stats[4].value}\n`
+        i++;
+    });
+
+    return new MessageEmbed()
+        .setColor('#0078d4')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setTitle(`League Table`)
+        .addFields(
+            {
+                name: `${data.name}`,
+                value: 'Total Players',
+            },
+            [
+                {
+                    name: `Team`,
+                    value: `${team}`,
+                    inline: true
+                }
+                // , {
+                //     name: `Games Played`,
+                //     value: `${gamesPlayed}`,
+                //     inline: true
+                // }
+                ,{
+                    name: `Goal Difference`,
+                    value: `${gd}`,
+                    inline: true
+                },
+                {
+                    name: `Points`,
+                    value: `${points}`,
+                    inline: true
+                }
+            ]
+        );
+}
+
+
 client.on('messageCreate', async(message) => {
     if (message.content[0] === '~') {
         if (message.content.includes('player')) {
@@ -126,22 +175,29 @@ client.on('messageCreate', async(message) => {
             } catch (error) {
                 errorMessage(message, error);
             }
+        } else if (message.content.includes('league-table')){
+            try {
+                const result = await axios.get(`https://api-football-standings.azharimm.site/leagues/eng.1/standings`)
+                const embed = leagueTableEmbed(result.data.data)
+                message.channel.send({ embeds: [embed] });
 
+            } catch (error) {
+                errorMessage(message, error);
+            }
         } else if (message.content.includes('ping')){
             try {
-                const embed = pongMessage(message)
+                pongMessage(message)
             } catch(error) {
                 errorMessage(message, error);
             }
 
         } else if (message.content.includes('pong')) {
             try {
-                const embed = pingMessage(message)
+                pingMessage(message)
             } catch (error) {
                 errorMessage(message, error);
             }
-        }
-        else {
+        } else {
             errorMessage(message, "Unknown command");
         }
 
