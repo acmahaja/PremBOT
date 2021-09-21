@@ -13,7 +13,14 @@ const PremBotModel = mongoose.model('PremBot', {_id: Number,  managerID: String 
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send(`Im Awake ${Date()}`);
+    const exampleEmbed = new MessageEmbed()
+        .setColor('#ef3939')
+        .setTitle('I\'m Awake')
+        .setDescription(`${Date()}`)
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setTimestamp()
+
+    client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send({ embeds: [exampleEmbed] });
 });
 
 
