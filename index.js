@@ -13,7 +13,7 @@ const PremBotModel = mongoose.model('PremBot', {_id: Number,  managerID: String 
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send('Im Awake');
+    client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send(`Im Awake ${Date()}`);
 });
 
 
