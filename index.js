@@ -65,6 +65,27 @@ const managerEmbed = (data, author) => {
         );
 }
 
+const helpEmbed = () => {
+    return new MessageEmbed()
+        .setColor('#DDBCEC')
+        .setTitle(`Hi! I'm PremBot 🦁`)
+        .setDescription(`**Get started by entering one of these commands:**`)
+        .setThumbnail('https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .addFields(
+            {
+                name: `Command`,
+                value: 'To Get Help\nFantasy Overview\nLive League Table', 
+                inline: true
+            },
+            {
+                name: `What to Enter`,
+                value: '~help\n~overview\n~league-table', 
+                inline: true
+            }
+        );
+}
+
 const overviewEmbed = (data) => {
     let fields = []
     let i = 0;
@@ -155,7 +176,17 @@ const leagueTableEmbed = (data) =>{
 
 client.on('messageCreate', async(message) => {
     if (message.content[0] === '~') {
-        if (message.content.includes('manager')) {
+        
+        if (message.content.includes('help')) {
+            try {
+                const embed = helpEmbed()
+                message.channel.send({ embeds: [embed] });
+
+            } catch (error) {
+                errorMessage(message, error);
+            }
+        }
+        else if (message.content.includes('manager')) {
             try {
                 message.content = message.content.substr('~manager '.length);
                 const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${message.content}/`)
