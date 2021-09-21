@@ -1,15 +1,20 @@
 require('dotenv').config()
 
-
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 const axios = require('axios')
 axios.defaults.headers.common['User-Agent'] = 'PostmanRuntime/7.26.2';
 
+const mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost:27017/PremBot');
+
+const PremBotModel = mongoose.model('PremBot', {_id: Number,  managerID: String });
+
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
 });
+
 
 const errorMessage = (message, error) => {
     console.log(error);
@@ -154,11 +159,6 @@ const leagueTableEmbed = (data) =>{
                     value: `${team}`,
                     inline: true
                 }
-                // , {
-                //     name: `Games Played`,
-                //     value: `${gamesPlayed}`,
-                //     inline: true
-                // }
                 ,{
                     name: `Goal Difference`,
                     value: `${gd}`,
@@ -171,6 +171,40 @@ const leagueTableEmbed = (data) =>{
                 }
             ]
         );
+}
+
+const saveManagerEmbed = (data, author) => {
+    return new MessageEmbed()
+        .setColor('#5CA65C')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setTitle(`Saved ID`)
+        .setThumbnail(author.avatarURL())
+        .addFields(
+            {
+                name: `${author.username}#${author.discriminator}`,
+                value: 'Discord Tag',
+            },
+            {
+                name: `${data.managerID}`,
+                value: 'Manager ID',
+            }
+        );
+}
+
+const errorSaveManagerEmbed = () => {
+    return new MessageEmbed()
+        .setColor('#F9484A')
+        .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
+        .setTitle(`ALREADY SAVED`)
+}
+
+const saveUserMongo = async (managerID, authorID)=>{
+    if(await PremBotModel.findById(authorID) != null)
+        return errorSaveManagerEmbed(authorID)
+
+    const newuser = new PremBotModel({ _id: authorID, managerID: managerID});
+    await newuser.save().then(() => console.log(newuser));
+    return saveManagerEmbed(newuser, authorID);
 }
 
 
@@ -189,9 +223,18 @@ client.on('messageCreate', async(message) => {
         else if (message.content.includes('manager')) {
             try {
                 message.content = message.content.substr('~manager '.length);
-                const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${message.content}/`)
-                const embed = managerEmbed(result.data, message.author)
-                message.channel.send({ embeds: [embed] });
+
+                if(message.content == 0){
+                    const User = await PremBotModel.findById(message.author.id);
+                    const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${User.managerID}/`)
+                    const embed = managerEmbed(result.data, message.author)
+                    message.channel.send({ embeds: [embed] });
+                } else {
+                    const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${message.content}/`)
+                    const embed = managerEmbed(result.data, message.author)
+                    message.channel.send({ embeds: [embed] });
+                }
+
                 
             } catch (error) {
                 errorMessage(message, error);
@@ -202,6 +245,16 @@ client.on('messageCreate', async(message) => {
                 const result = await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
                 const embed = overviewEmbed(result.data)
                 message.channel.send({ embeds: [embed] });
+
+            } catch (error) {
+                errorMessage(message, error);
+            }
+        } else if (message.content.includes('save')) {
+            try {
+                console.log(message.author);
+                const managerID = message.content.substr('~save '.length);
+                const embed = await saveUserMongo(managerID, message.author);
+                 message.channel.send({ embeds: [embed] });
 
             } catch (error) {
                 errorMessage(message, error);
