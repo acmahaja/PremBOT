@@ -13,11 +13,14 @@ const PremBotModel = mongoose.model('PremBot', {_id: Number,  managerID: String 
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+    client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send('Im Awake');
 });
 
 
 const errorMessage = (message, error) => {
-    console.log(error);
+    
+    client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send(error);
+
     const exampleEmbed = new MessageEmbed()
         .setColor('#ef3939')
         .setTitle('Something Broke 😲')
@@ -74,22 +77,28 @@ const helpEmbed = () => {
     return new MessageEmbed()
         .setColor('#DDBCEC')
         .setTitle(`Hi! I'm PremBot 🦁`)
-        .setDescription(`**Get started by entering one of these commands:**`)
+        .setDescription(`**Get started by entering one of these commands:**\n 
+                        How To Get Your Manager ID:\n
+                        Step One - Log into the Official Fantasy Premier League site.\n
+                        Step Two - Click on the 'Points' tab.\n
+                        Step Three - Look for the number in the URL of that webpage. That is your unique FPL ID.`)
         .setThumbnail('https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .addFields(
             {
                 name: `Command`,
-                value: 'To Get Help\nFantasy Overview\nLive League Table', 
+                value: 'To Get Help\nFantasy Overview\nLive League Table\nManager Overview\nSave Manager ID\nManager Overview (Saved)\n To Suggest Features',
                 inline: true
             },
             {
                 name: `What to Enter`,
-                value: '~help\n~overview\n~league-table', 
+                value: '~help\n~overview\n~league-table\n~manager <id>\n~save <id>\n~manager\n~suggest <message>',
                 inline: true
             }
         );
 }
+
+
 
 const overviewEmbed = (data) => {
     let fields = []
@@ -199,18 +208,25 @@ const errorSaveManagerEmbed = () => {
 }
 
 const saveUserMongo = async (managerID, authorID)=>{
-    if(await PremBotModel.findById(authorID) != null)
+    if(await PremBotModel.findById(authorID) != null){
         return errorSaveManagerEmbed(authorID)
+    }
 
     const newuser = new PremBotModel({ _id: authorID, managerID: managerID});
     await newuser.save().then(() => console.log(newuser));
     return saveManagerEmbed(newuser, authorID);
 }
 
+const suggestionFeature = (feature) =>{
+    return new MessageEmbed()
+        .setColor('#DDBCEC')
+        .setTitle(`Thanks for your suggestion!🦁`)
+        .setDescription(`The following feature was added to our requests\n 
+                        ${feature}`)
+}
 
 client.on('messageCreate', async(message) => {
     if (message.content[0] === '~') {
-        
         if (message.content.includes('help')) {
             try {
                 const embed = helpEmbed()
@@ -219,8 +235,18 @@ client.on('messageCreate', async(message) => {
             } catch (error) {
                 errorMessage(message, error);
             }
-        }
-        else if (message.content.includes('manager')) {
+        } else if (message.content.includes('suggestion')) {
+            try {
+                const toSend = message.content.substr('~suggestion '.length);
+                // client.guilds.cache.get().channels.cache.get(889916382869852240).send(toSend)
+                await client.guilds.cache.get('882798563795533876').channels.cache.get('889916382869852240').send(toSend);
+                const embed = suggestionFeature(toSend)
+                message.channel.send({ embeds: [embed] });
+
+            } catch (error) {
+                errorMessage(message, error);
+            }
+        } else if (message.content.includes('manager')) {
             try {
                 message.content = message.content.substr('~manager '.length);
 
@@ -239,7 +265,6 @@ client.on('messageCreate', async(message) => {
             } catch (error) {
                 errorMessage(message, error);
             }
-
         } else if (message.content.includes('overview')) {
             try {
                 const result = await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
@@ -281,10 +306,11 @@ client.on('messageCreate', async(message) => {
             } catch (error) {
                 errorMessage(message, error);
             }
+        } else if ((message.content.includes('hi'))){
+            message.channel.send(`Hi ${message.author.username}`);
         } else {
             errorMessage(message, "Unknown command");
         }
-
     }
 });
 
