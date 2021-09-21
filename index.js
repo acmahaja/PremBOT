@@ -225,6 +225,7 @@ const suggestionFeature = (feature) =>{
                         ${feature}`)
 }
 
+
 client.on('messageCreate', async(message) => {
     if (message.content[0] === '~') {
         if (message.content.includes('help')) {
