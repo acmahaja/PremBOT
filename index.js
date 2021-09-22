@@ -20,7 +20,7 @@ client.on('ready', () => {
         .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setTimestamp()
 
-    client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send({ embeds: [exampleEmbed] });
+    client.guilds.cache.get(`${process.env.BOT_GUILD}`).channels.cache.get(`${process.env.BOT_CHANNEL_STATUS}`).send({ embeds: [exampleEmbed] });
 });
 
 const { errorMessage, errorSaveManagerEmbed} = require('./Modules/errors')
@@ -63,8 +63,7 @@ client.on('messageCreate', async(message) => {
         } else if (message.content.includes('suggestion')) {
             try {
                 const toSend = message.content.substr('~suggestion '.length);
-                // client.guilds.cache.get().channels.cache.get(889916382869852240).send(toSend)
-                await client.guilds.cache.get('882798563795533876').channels.cache.get('889916382869852240').send(toSend);
+                await client.guilds.cache.get(process.env.BOT_GUILD).channels.cache.get(process.env.BOT_CHANNEL_SUGGESTION).send(toSend);
                 const embed = suggestionFeature(toSend)
                 message.channel.send({ embeds: [embed] });
 
@@ -74,17 +73,16 @@ client.on('messageCreate', async(message) => {
         } else if (message.content.includes('manager')) {
             try {
                 message.content = message.content.substr('~manager '.length);
-
+                let id = null;
                 if(message.content == 0){
                     const User = await PremBotModel.findById(message.author.id);
-                    const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${User.managerID}/`)
-                    const embed = managerEmbed(result.data, message.author)
-                    message.channel.send({ embeds: [embed] });
+                    id = User.managerID;
                 } else {
-                    const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${message.content}/`)
-                    const embed = managerEmbed(result.data, message.author)
-                    message.channel.send({ embeds: [embed] });
+                    id = message.content;
                 }
+                const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${id}/`)
+                const embed = managerEmbed(result.data, message.author)
+                await message.channel.send({ embeds: [embed] });
 
                 
             } catch (error) {
