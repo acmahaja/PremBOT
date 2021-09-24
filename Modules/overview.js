@@ -1,18 +1,22 @@
 const { MessageEmbed } = require('discord.js');
+require('dotenv').config()
 
-const leagueTableEmbed = (data) => {
+
+const leagueTableEmbed = (data, client) => {
 
     let team = ""
-    let gamesPlayed = ""
     let gd = ""
     let points = ""
-
     let i = 1;
+
+    
     data.standings.forEach(rank => {
-        team += `${i}.\t${rank.team.displayName}\n`
+        let logo;
+        console.log(rank.team.displayName.toLowerCase().replace(/[^a-zA-Z0-9]/g, ''));
+        logo = client.guilds.cache.get('882798563795533876').emojis.cache.find(emoji => emoji.name.toLowerCase() === rank.team.displayName.toLowerCase().replace(/[^a-zA-Z0-9]/g, ''));
+        team += `${i}.\t${logo} ${rank.team.displayName}\n`
         points += `${rank.stats[6].value}\n`
         gd += `${rank.stats[9].value}\n`
-        gamesPlayed += `${rank.stats[4].value}\n`
         i++;
     });
 

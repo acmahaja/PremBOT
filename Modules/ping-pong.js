@@ -1,21 +1,21 @@
 const { MessageEmbed } = require('discord.js');
 
-const pingMessage = (message) => {
-    const exampleEmbed = new MessageEmbed()
+const pingMessage = () => {
+    const pingEmbed = new MessageEmbed()
         .setColor('#e6b48f')
         .setTitle('Ping 🏓')
         .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setTimestamp()
-    message.channel.send({ embeds: [exampleEmbed] });
+    return pingEmbed;
 }
 
 const pongMessage = (message) => {
-    const exampleEmbed = new MessageEmbed()
+    const pongEmbed = new MessageEmbed()
         .setColor('#e6b48f')
         .setTitle('Pong 🏓')
         .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setTimestamp()
-    message.channel.send({ embeds: [exampleEmbed] });
+    return pongEmbed
 }
 
 

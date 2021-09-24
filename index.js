@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const { Client, Intents, MessageEmbed } = require('discord.js');
+const { Client, Intents, MessageEmbed, Interaction } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 const axios = require('axios')
 axios.defaults.headers.common['User-Agent'] = 'PostmanRuntime/7.26.2';
@@ -21,7 +21,40 @@ client.on('ready', () => {
         .setTimestamp()
 
     client.guilds.cache.get(`${process.env.BOT_GUILD}`).channels.cache.get(`${process.env.BOT_CHANNEL_STATUS}`).send({ embeds: [exampleEmbed] });
+
+    //const Guilds = client.guilds.cache.get('882798563795533876')
+    const Guilds = client.guilds.cache.map(guild => guild.id);
+
+    Guilds.forEach(guild => {
+        const currGuild = client.guilds.cache.get(`${guild}`)
+        let commands;
+        if (guild) {
+            commands = currGuild.commands
+        } else {
+            commands = client.application?.commands
+        }
+
+        commands?.create({
+            name: 'ping',
+            description: 'Reply Pong'
+        })
+
+        commands?.create({
+            name: 'pong',
+            description: 'Reply Ping'
+        })
+
+        commands?.create({
+            name: 'hi',
+            description: 'Prem Bot Says Hello'
+        })
+    });
+
+    
 });
+
+
+
 
 const { errorMessage, errorSaveManagerEmbed} = require('./Modules/errors')
 const { pingMessage, pongMessage } = require('./Modules/ping-pong')
@@ -41,6 +74,8 @@ const saveUserMongo = async (managerID, authorID)=>{
 }
 
 
+
+
 const suggestionFeature = (feature) =>{
     return new MessageEmbed()
         .setColor('#DDBCEC')
@@ -48,6 +83,26 @@ const suggestionFeature = (feature) =>{
         .setDescription(`The following feature was added to our requests\n 
                         ${feature}`)
 }
+
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isCommand()) {
+        return
+    }
+
+    const { commandName, options, user } = interaction
+
+    if (commandName === 'ping') {
+        const embed = pingMessage();
+        interaction.reply({ embeds: [embed] })
+    } else if (commandName === 'pong'){
+        const embed = pongMessage();
+        interaction.reply({ embeds: [embed] })
+    } else if (commandName === 'hi') {
+        interaction.reply({ content: `Hi ${user.username}!` })
+    }
+
+
+})
 
 
 client.on('messageCreate', async(message) => {
@@ -110,27 +165,12 @@ client.on('messageCreate', async(message) => {
         } else if (message.content.includes('league-table')){
             try {
                 const result = await axios.get(`https://api-football-standings.azharimm.site/leagues/eng.1/standings`)
-                const embed = leagueTableEmbed(result.data.data)
+                const embed = leagueTableEmbed(result.data.data, client)
                 message.channel.send({ embeds: [embed] });
 
             } catch (error) {
                 errorMessage(client,message, error);
             }
-        } else if (message.content.includes('ping')){
-            try {
-                pongMessage(message)
-            } catch(error) {
-                errorMessage(client,message, error);
-            }
-
-        } else if (message.content.includes('pong')) {
-            try {
-                pingMessage(message)
-            } catch (error) {
-                errorMessage(client,message, error);
-            }
-        } else if ((message.content.includes('hi'))){
-            message.channel.send(`Hi ${message.author.username}`);
         } else {
             errorMessage(client,message, "Unknown command");
         }
