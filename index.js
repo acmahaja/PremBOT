@@ -1,12 +1,16 @@
+
 require('dotenv').config()
 
+const DiscordJS = require('discord.js')
 const { Client, Intents, MessageEmbed, Interaction } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 const axios = require('axios')
 axios.defaults.headers.common['User-Agent'] = 'PostmanRuntime/7.26.2';
 
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/PremBot');
+mongoose.connect('mongodb://localhost:27017/PremBot').then(()=>{
+    console.log("Connected to PremBot DB");
+});
 
 const PremBotModel = mongoose.model('PremBot', {_id: Number,  managerID: String });
 
@@ -22,13 +26,13 @@ client.on('ready', () => {
 
     client.guilds.cache.get(`${process.env.BOT_GUILD}`).channels.cache.get(`${process.env.BOT_CHANNEL_STATUS}`).send({ embeds: [exampleEmbed] });
 
-    //const Guilds = client.guilds.cache.get('882798563795533876')
     const Guilds = client.guilds.cache.map(guild => guild.id);
-
+    
     Guilds.forEach(guild => {
+        //const currGuild = [client.guilds.cache.get('882798563795533876')]
         const currGuild = client.guilds.cache.get(`${guild}`)
         let commands;
-        if (guild) {
+        if (currGuild) {
             commands = currGuild.commands
         } else {
             commands = client.application?.commands
@@ -48,12 +52,68 @@ client.on('ready', () => {
             name: 'hi',
             description: 'Prem Bot Says Hello'
         })
-    });
 
-    
+        commands?.create({
+            name: 'league-table',
+            description: 'Get live premier league table'
+        })
+
+        commands?.create({
+            name: 'suggestion',
+            description: 'Give suggestions to help improve the bot!',
+            options: [
+                {
+                    name: 'text',
+                    description: 'Thanks for your help!',
+                    required: true,
+                    type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING
+                }
+            ]
+        })
+
+
+        commands?.create({
+            name: 'save',
+            description: 'Save your Manager ID to bot',
+            options: [
+                {
+                    name: 'id',
+                    description: 'Enter Manger ID\n Enter /help to find id',
+                    required: true,
+                    type: DiscordJS.Constants.ApplicationCommandOptionTypes.NUMBER
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'help',
+            description: 'List of commands for bot'
+        })
+
+        commands?.create({
+            name: 'overview',
+            description: 'Get Competition Overview'
+        })
+
+        commands?.create({
+            name: 'manager',
+            description: 'Get Manager Overview',
+            options: [
+                {
+                    name: 'id',
+                    description: 'Enter Manger ID\n Enter /help to find id',
+                    required: true,
+                    type: DiscordJS.Constants.ApplicationCommandOptionTypes.NUMBER
+                }
+            ]
+        })
+
+        commands?.create({
+            name: 'my-team',
+            description: 'Get Saved Player Overview',
+        })
+    });    
 });
-
-
 
 
 const { errorMessage, errorSaveManagerEmbed} = require('./Modules/errors')
@@ -73,9 +133,6 @@ const saveUserMongo = async (managerID, authorID)=>{
     return saveManagerEmbed(newuser, authorID);
 }
 
-
-
-
 const suggestionFeature = (feature) =>{
     return new MessageEmbed()
         .setColor('#DDBCEC')
@@ -90,8 +147,15 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     const { commandName, options, user } = interaction
+    if (commandName === 'help'){
+        try {
+            const embed = helpEmbed()
+            await interaction.reply({ embeds: [embed] });
 
-    if (commandName === 'ping') {
+        } catch (error) {
+            errorMessage(client, message, error);
+        }
+    } else if (commandName === 'ping') {
         const embed = pingMessage();
         interaction.reply({ embeds: [embed] })
     } else if (commandName === 'pong'){
@@ -99,83 +163,66 @@ client.on('interactionCreate', async (interaction) => {
         interaction.reply({ embeds: [embed] })
     } else if (commandName === 'hi') {
         interaction.reply({ content: `Hi ${user.username}!` })
-    }
-
-
-})
-
-
-client.on('messageCreate', async(message) => {
-    if (message.content[0] === '~') {
-        if (message.content.includes('help')) {
-            try {
-                const embed = helpEmbed()
-                message.channel.send({ embeds: [embed] });
-
-            } catch (error) {
-                errorMessage(client, message, error);
-            }
-        } else if (message.content.includes('suggestion')) {
-            try {
-                const toSend = message.content.substr('~suggestion '.length);
-                await client.guilds.cache.get(process.env.BOT_GUILD).channels.cache.get(process.env.BOT_CHANNEL_SUGGESTION).send(toSend);
-                const embed = suggestionFeature(toSend)
-                message.channel.send({ embeds: [embed] });
-
-            } catch (error) {
-                errorMessage(client,message, error);
-            }
-        } else if (message.content.includes('manager')) {
-            try {
-                message.content = message.content.substr('~manager '.length);
-                let id = null;
-                if(message.content == 0){
-                    const User = await PremBotModel.findById(message.author.id);
-                    id = User.managerID;
-                } else {
-                    id = message.content;
-                }
-                const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${id}/`)
-                const embed = managerEmbed(result.data, message.author)
-                await message.channel.send({ embeds: [embed] });
-
-                
-            } catch (error) {
-                errorMessage(client,message, error);
-            }
-        } else if (message.content.includes('overview')) {
-            try {
-                const result = await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
-                const embed = overviewEmbed(result.data)
-                message.channel.send({ embeds: [embed] });
-
-            } catch (error) {
-                errorMessage(client,message, error);
-            }
-        } else if (message.content.includes('save')) {
-            try {
-                console.log(message.author);
-                const managerID = message.content.substr('~save '.length);
-                const embed = await saveUserMongo(managerID, message.author);
-                 message.channel.send({ embeds: [embed] });
-
-            } catch (error) {
-                errorMessage(client,message, error);
-            }
-        } else if (message.content.includes('league-table')){
-            try {
-                const result = await axios.get(`https://api-football-standings.azharimm.site/leagues/eng.1/standings`)
-                const embed = leagueTableEmbed(result.data.data, client)
-                message.channel.send({ embeds: [embed] });
-
-            } catch (error) {
-                errorMessage(client,message, error);
-            }
-        } else {
-            errorMessage(client,message, "Unknown command");
+    } else if (commandName === 'league-table'){
+        try {
+            const result = await axios.get(`https://api-football-standings.azharimm.site/leagues/eng.1/standings`)
+            const embed = leagueTableEmbed(result.data.data, client)
+            await interaction.reply({ embeds: [embed] });
+        } catch (error) {
+            errorMessage(client, interaction, error);
         }
-    }
-});
+    } else if (commandName === 'suggestion') {
+        try {
+            const toSend = options.getString('text');
+            await client.guilds.cache.get(process.env.BOT_GUILD).channels.cache.get(process.env.BOT_CHANNEL_SUGGESTION).send(toSend);
+            const embed = suggestionFeature(toSend)
+            interaction.reply({ embeds: [embed] });
+
+        } catch (error) {
+            errorMessage(client, interaction, error);
+        }
+    } else if (commandName === 'manager') {
+        try {
+            const ManagerID = options.getNumber('id')
+            const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${ManagerID}/`)
+            console.log(interaction);
+            const embed = managerEmbed(result.data, interaction.user)
+            await interaction.reply({ embeds: [embed] });
+        } catch (error) {
+            errorMessage(client, interaction, error);
+        }
+    } else if (commandName === 'save') {
+        try {
+            const ManagerID = options.getNumber('id')
+            const embed = await saveUserMongo(ManagerID, interaction.user);
+            interaction.reply({ embeds: [embed] });
+
+        } catch (error) {
+            errorMessage(client, message, error);
+        }
+    } else if (commandName === 'my-team') {
+        try{
+            const { managerID} = await PremBotModel.findById(interaction.user.id);
+            console.log(managerID);
+            const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${managerID}/`)
+            const embed = managerEmbed(result.data, interaction.user)
+            await interaction.reply({ embeds: [embed] });
+
+
+        } catch (error) {
+            errorMessage(client, interaction, error);
+        }
+    } else if (commandName === 'overview') {
+        try {
+            const result = await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
+            const embed = overviewEmbed(result.data)
+            await interaction.reply({ embeds: [embed] });
+
+        } catch (error) {
+            errorMessage(client, interaction, error);
+        }
+    } 
+})
 
 // Login to Discord with your client's token
 client.login(process.env.TOKEN);

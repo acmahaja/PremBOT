@@ -12,7 +12,6 @@ const leagueTableEmbed = (data, client) => {
     
     data.standings.forEach(rank => {
         let logo;
-        console.log(rank.team.displayName.toLowerCase().replace(/[^a-zA-Z0-9]/g, ''));
         logo = client.guilds.cache.get('882798563795533876').emojis.cache.find(emoji => emoji.name.toLowerCase() === rank.team.displayName.toLowerCase().replace(/[^a-zA-Z0-9]/g, ''));
         team += `${i}.\t${logo} ${rank.team.displayName}\n`
         points += `${rank.stats[6].value}\n`

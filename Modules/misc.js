@@ -20,7 +20,7 @@ const helpEmbed = () => {
             },
             {
                 name: `What to Enter`,
-                value: '~help\n~overview\n~league-table\n~manager <id>\n~save <id>\n~manager\n~suggest <message>',
+                value: '/help\n/overview\n/league-table\n/manager <id>\n/save <id>\n/manager\n/suggest <message>',
                 inline: true
             }
         );

@@ -9,7 +9,7 @@ const pingMessage = () => {
     return pingEmbed;
 }
 
-const pongMessage = (message) => {
+const pongMessage = () => {
     const pongEmbed = new MessageEmbed()
         .setColor('#e6b48f')
         .setTitle('Pong 🏓')

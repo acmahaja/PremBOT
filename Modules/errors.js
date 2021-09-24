@@ -1,7 +1,7 @@
 const { MessageEmbed } = require('discord.js');
 
 
-const errorMessage = (client, message, error) => {
+const errorMessage = (client, interaction, error) => {
 
     client.guilds.cache.get('882798563795533876').channels.cache.get('889917151216021524').send(error);
 
@@ -11,7 +11,7 @@ const exampleEmbed = new MessageEmbed()
         .setFooter(`PremBOT`, 'https://raw.githubusercontent.com/acmahaja/PremBOT/master/logo.png')
         .setDescription(`${error}`)
         .setTimestamp()
-    message.channel.send({ embeds: [exampleEmbed] });
+    interaction.reply({ embeds: [exampleEmbed] });
 }
 
 const errorSaveManagerEmbed = () => {
