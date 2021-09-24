@@ -1,16 +1,32 @@
 
 require('dotenv').config()
 
+const axios = require('axios')
+axios.defaults.headers.common['User-Agent'] = 'PostmanRuntime/7.26.2';
+
+
 const DiscordJS = require('discord.js')
 const { Client, Intents, MessageEmbed, Interaction } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
-const axios = require('axios')
-axios.defaults.headers.common['User-Agent'] = 'PostmanRuntime/7.26.2';
+
+
+const cron = require('node-cron');
+
 
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost:27017/PremBot').then(()=>{
     console.log("Connected to PremBot DB");
 });
+
+
+const { errorMessage, errorSaveManagerEmbed } = require('./Modules/errors')
+const { pingMessage, pongMessage } = require('./Modules/ping-pong')
+const { managerEmbed, saveManagerEmbed } = require('./Modules/manager')
+const { leagueTableEmbed, overviewEmbed } = require('./Modules/overview')
+const { helpEmbed } = require('./Modules/misc')
+
+let currGW = 1; // current GW
+
 
 const PremBotModel = mongoose.model('PremBot', {_id: Number,  managerID: String });
 
@@ -115,13 +131,21 @@ client.on('ready', () => {
     });    
 });
 
+const updateGW = async() =>{
+    const { data } = await axios.get(`https://fantasy.premierleague.com/api/bootstrap-static/`)
+    const {events} = data
 
-const { errorMessage, errorSaveManagerEmbed} = require('./Modules/errors')
-const { pingMessage, pongMessage } = require('./Modules/ping-pong')
-const { managerEmbed, saveManagerEmbed } = require('./Modules/manager')
-const { leagueTableEmbed, overviewEmbed } = require('./Modules/overview')
-const { helpEmbed } = require('./Modules/misc')
+    while (events[currGW].data_checked) {
+        currGW++;
+    }
+    //console.log(`Current GW: ${currGW}`);
+}
+updateGW();
 
+// run every 2 mins
+cron.schedule('* */2 * * * *', () => {
+    updateGW();
+});
 
 const saveUserMongo = async (managerID, authorID)=>{
     if(await PremBotModel.findById(authorID) != null){
@@ -184,9 +208,10 @@ client.on('interactionCreate', async (interaction) => {
     } else if (commandName === 'manager') {
         try {
             const ManagerID = options.getNumber('id')
-            const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${ManagerID}/`)
+            let result = await axios.get(`https://fantasy.premierleague.com/api/entry/${ManagerID}/`)
             console.log(interaction);
-            const embed = managerEmbed(result.data, interaction.user)
+            result.data.id = ManagerID;
+            const embed = await managerEmbed(result.data, interaction.user, currGW)
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
             errorMessage(client, interaction, error);
@@ -204,8 +229,9 @@ client.on('interactionCreate', async (interaction) => {
         try{
             const { managerID} = await PremBotModel.findById(interaction.user.id);
             console.log(managerID);
-            const result = await axios.get(`https://fantasy.premierleague.com/api/entry/${managerID}/`)
-            const embed = managerEmbed(result.data, interaction.user)
+            let result = await axios.get(`https://fantasy.premierleague.com/api/entry/${managerID}/`)
+            result.data.id = managerID
+            const embed = await managerEmbed(result.data, interaction.user, currGW)
             await interaction.reply({ embeds: [embed] });
 
 
