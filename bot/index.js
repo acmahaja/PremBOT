@@ -28,7 +28,7 @@ const { helpEmbed } = require('./Modules/misc')
 let currGW = 1; // current GW
 
 
-const PremBotModel = mongoose.model('PremBot', {_id: Number,  managerID: String });
+const ManagersModel = mongoose.model('Managers', {_id: Number,  managerID: String });
 
 
 client.on('ready', () => {
@@ -148,11 +148,11 @@ cron.schedule('* */2 * * * *', () => {
 });
 
 const saveUserMongo = async (managerID, authorID)=>{
-    if(await PremBotModel.findById(authorID) != null){
+    if (await ManagersModel.findById(authorID) != null){
         return errorSaveManagerEmbed(authorID)
     }
 
-    const newuser = new PremBotModel({ _id: authorID, managerID: managerID});
+    const newuser = new ManagersModel({ _id: authorID, managerID: managerID});
     await newuser.save().then(() => console.log(newuser));
     return saveManagerEmbed(newuser, authorID);
 }
@@ -227,7 +227,7 @@ client.on('interactionCreate', async (interaction) => {
         }
     } else if (commandName === 'my-team') {
         try{
-            const { managerID} = await PremBotModel.findById(interaction.user.id);
+            const { managerID } = await ManagersModel.findById(interaction.user.id);
             console.log(managerID);
             let result = await axios.get(`https://fantasy.premierleague.com/api/entry/${managerID}/`)
             result.data.id = managerID
